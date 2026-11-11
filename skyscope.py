@@ -1469,6 +1469,25 @@ class SkyScope:
         """Change set for a tap on the browser scope."""
         return {"range_index": (self.settings.range_index + 1) % len(self.settings.range_presets())}
 
+    def handle_wheel(self, y: int) -> None:
+        """A mouse wheel or trackpad over the scope (not the side panel): up one range in, down one out."""
+        if not y or pygame.mouse.get_pos()[0] >= self.layout.radar_w:
+            return
+        now = time.monotonic()
+        if now < getattr(self, "_wheel_quiet", 0.0):
+            return
+        self._wheel_quiet = now + 0.2
+        changes = self.web_range_step(-1 if y > 0 else 1)
+        if changes["range_index"] != self.settings.range_index:
+            self.settings.range_index = changes["range_index"]
+            self.invalidate()
+
+    def web_range_step(self, step: int) -> dict:
+        """Change set for the scroll wheel or trackpad over the scope: one range in (step -1) or out (+1), stopping
+        at the shortest and longest rather than wrapping round."""
+        last = len(self.settings.range_presets()) - 1
+        return {"range_index": max(0, min(last, self.settings.range_index + (1 if step > 0 else -1)))}
+
     def render(self) -> None:
         if self.static is None:
             self.static = self.build_static()
@@ -1726,6 +1745,8 @@ def main() -> int:
                     app.resize(screen)
                 else:
                     running = app.handle_key(event.key)
+            elif event.type == pygame.MOUSEWHEEL:
+                app.handle_wheel(event.y)
 
         if web:
             web.apply_pending(app.apply_changes)

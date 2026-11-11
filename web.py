@@ -1596,7 +1596,7 @@ class SettingsServer:
                     else:
                         self._send_json(updates.start())
                     return
-                changing = path in ("/api/next-range", "/api/quick", "/api/preset", CONFIG_PATH, GPS_NOW_PATH)
+                changing = path in ("/api/next-range", "/api/range-step", "/api/quick", "/api/preset", CONFIG_PATH, GPS_NOW_PATH)
                 access = self.access()
                 if changing and access not in ACCESS_OK:
                     # another device, and changes from it aren't allowed (or need the PIN first)
@@ -1621,6 +1621,19 @@ class SettingsServer:
                     done = threading.Event()
                     server_ref._pending.put((server_ref.radar.web_next_range(), done))
                     done.wait(2.0)
+                    self._send_json({"ok": True})
+                    return
+                if path == "/api/range-step" and server_ref.radar is not None:
+                    # the scroll wheel or trackpad over the radar: {"step": -1} one range in, {"step": 1} one out
+                    length = min(int(self.headers.get("Content-Length") or 0), 64)
+                    try:
+                        step = int(json.loads(self.rfile.read(length) or b"{}").get("step", 0))
+                    except (ValueError, TypeError, AttributeError):
+                        step = 0
+                    if step:
+                        done = threading.Event()
+                        server_ref._pending.put((server_ref.radar.web_range_step(step), done))
+                        done.wait(2.0)
                     self._send_json({"ok": True})
                     return
                 if path == "/api/quick" and server_ref.radar is not None:
