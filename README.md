@@ -20,8 +20,8 @@ in any web browser (sharp on Retina and high-DPI screens).
 
 ## Download
 
-**[SkyScope 1.9.7 for Mac](https://github.com/projectmoonpi/skyscope/releases/download/v1.9.7/SkyScope-1.9.7-for-Mac.dmg)** ·
-**[SkyScope 1.9.7 for Windows](https://github.com/projectmoonpi/skyscope/releases/download/v1.9.7/Install-SkyScope-1.9.7-for-Windows.exe)**
+**[SkyScope 1.9.8 for Mac](https://github.com/projectmoonpi/skyscope/releases/download/v1.9.8/SkyScope-1.9.8-for-Mac.dmg)** ·
+**[SkyScope 1.9.8 for Windows](https://github.com/projectmoonpi/skyscope/releases/download/v1.9.8/Install-SkyScope-1.9.8-for-Windows.exe)**
 (also on [projectmoonpi.com/downloads](https://www.projectmoonpi.com/downloads/#skyscope), or the
 [latest release](../../releases/latest) page): one file. On a Mac, open it and double-click
 **Install SkyScope**; on Windows, double-click it. The [laptop and desktop section](#running-on-a-laptop-or-desktop-mac-windows-linux) below
@@ -365,8 +365,8 @@ device on the network can open `/radar` while the Pi drives the TV.
 
 ## Running on a laptop or desktop (Mac, Windows, Linux)
 
-**The easy way (Mac or Windows):** download **[for Mac](https://github.com/projectmoonpi/skyscope/releases/download/v1.9.7/SkyScope-1.9.7-for-Mac.dmg)**
-or **[for Windows](https://github.com/projectmoonpi/skyscope/releases/download/v1.9.7/Install-SkyScope-1.9.7-for-Windows.exe)**
+**The easy way (Mac or Windows):** download **[for Mac](https://github.com/projectmoonpi/skyscope/releases/download/v1.9.8/SkyScope-1.9.8-for-Mac.dmg)**
+or **[for Windows](https://github.com/projectmoonpi/skyscope/releases/download/v1.9.8/Install-SkyScope-1.9.8-for-Windows.exe)**
 (also on the [latest release](../../releases/latest)): one file. On a Mac, open the disk image and
 double-click **Install SkyScope**; on Windows, double-click the downloaded installer. It runs on Python 3.10 or newer from
 [python.org](https://www.python.org/downloads/); if the computer hasn't got
@@ -374,7 +374,8 @@ it, the installer offers to download and install it (checking it's signed by
 the Python Software Foundation). The installer:
 
 * installs SkyScope for you (Mac: `~/Library/Application Support/SkyScope`;
-  Windows: `%LOCALAPPDATA%\Programs\Project Moon Pi\SkyScope`, or a folder you choose) with its own copy of pygame-ce
+  Windows: `%LOCALAPPDATA%\Programs\Project Moon Pi\SkyScope`, or a folder you choose, though not the Desktop,
+  Documents, Downloads or OneDrive, where ransomware protection and OneDrive stop it saving its settings) with its own copy of pygame-ce
   (and pystray and Pillow for its icon),
 * asks whether phones and SkyScope Satellite displays on your Wi-Fi may open
   it (otherwise it listens to this computer only), whether it should start
