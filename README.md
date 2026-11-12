@@ -20,8 +20,8 @@ in any web browser (sharp on Retina and high-DPI screens).
 
 ## Download
 
-**[SkyScope 1.9.9 for Mac](https://github.com/projectmoonpi/skyscope/releases/download/v1.9.9/SkyScope-1.9.9-for-Mac.dmg)** ·
-**[SkyScope 1.9.9 for Windows](https://github.com/projectmoonpi/skyscope/releases/download/v1.9.9/Install-SkyScope-1.9.9-for-Windows.exe)**
+**[SkyScope 1.10.0 for Mac](https://github.com/projectmoonpi/skyscope/releases/download/v1.10.0/SkyScope-1.10.0-for-Mac.dmg)** ·
+**[SkyScope 1.10.0 for Windows](https://github.com/projectmoonpi/skyscope/releases/download/v1.10.0/Install-SkyScope-1.10.0-for-Windows.exe)**
 (also on [projectmoonpi.com/downloads](https://www.projectmoonpi.com/downloads/#skyscope), or the
 [latest release](../../releases/latest) page): one file. On a Mac, open it and double-click
 **Install SkyScope**; on Windows, double-click it. The [laptop and desktop section](#running-on-a-laptop-or-desktop-mac-windows-linux) below
@@ -326,8 +326,9 @@ settings page.
   change everything, and only it can change this choice or the PIN.
 - **Updates:** SkyScope asks GitHub a few times a day for a newer release
   (`updates.py`; off with *Check for a newer SkyScope* in About). A note on
-  the radar, the tray icon's menu and About's **Updates** card say when there
-  is one. **Update to <version>** (on the computer running SkyScope) downloads
+  the radar, the menu bar icon's menu (Mac), a notice and menu item from the
+  icon by the clock (Windows, once per version) and About's **Updates** card
+  say when there is one. **Update to <version>** (on the computer running SkyScope) downloads
   it in the background, checks its SHA-256 against GitHub's, unpacks it and
   opens its installer in front; its **Update** keeps your settings.
 - **Click a plane** (its symbol or label) **or a row in the table** to select
@@ -350,8 +351,8 @@ settings page.
   "No image available" in the same box. The Pi display
   shows it too.
 - **R** (or Space): next range; clicking the radar never changes it. **F**: fullscreen.
-- **Scroll wheel or trackpad** over the scope: up for a shorter range, down for a longer one (one range a step,
-  stopping at the ends). Elsewhere the page scrolls as usual.
+- **Scroll wheel or trackpad** over the scope: up (or pinch out) for a shorter range, down (or pinch in) for a
+  longer one (one range a step, stopping at the ends). Elsewhere the page scrolls as usual.
 - **⚙ Filters** (bottom of the panel) opens a panel to pick any combination of
   kinds of aircraft and altitude blocks, a preset, and the SIDs/STARs switch.
   It applies at once; the button shows what's being shown (e.g.
@@ -368,8 +369,8 @@ device on the network can open `/radar` while the Pi drives the TV.
 
 ## Running on a laptop or desktop (Mac, Windows, Linux)
 
-**The easy way (Mac or Windows):** download **[for Mac](https://github.com/projectmoonpi/skyscope/releases/download/v1.9.9/SkyScope-1.9.9-for-Mac.dmg)**
-or **[for Windows](https://github.com/projectmoonpi/skyscope/releases/download/v1.9.9/Install-SkyScope-1.9.9-for-Windows.exe)**
+**The easy way (Mac or Windows):** download **[for Mac](https://github.com/projectmoonpi/skyscope/releases/download/v1.10.0/SkyScope-1.10.0-for-Mac.dmg)**
+or **[for Windows](https://github.com/projectmoonpi/skyscope/releases/download/v1.10.0/Install-SkyScope-1.10.0-for-Windows.exe)**
 (also on the [latest release](../../releases/latest)): one file. On a Mac, open the disk image and
 double-click **Install SkyScope**; on Windows, double-click the downloaded installer. It runs on Python 3.10 or newer from
 [python.org](https://www.python.org/downloads/); if the computer hasn't got

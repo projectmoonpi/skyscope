@@ -1032,22 +1032,32 @@ scope.addEventListener("click", e => {
   // changes with R or the settings, never by accident).
   if (id) select(id); else if (selectedId) select(null);
 });
-// The scroll wheel or a trackpad's two-finger swipe over the scope: up (away from you) one range in, down one out.
-// A trackpad sends many small steps per swipe, so they're added up, and a step then waits a moment: one swipe, one
-// range. Over the scope only, so the rest of the page scrolls as usual.
-let wheelSum = 0, wheelQuietUntil = 0;
-scope.addEventListener("wheel", e => {
-  if (!state || !canChange() || e.ctrlKey) return;          // (ctrlKey: a trackpad pinch, the browser's own zoom)
-  e.preventDefault();
-  const now = performance.now();
-  if (now < wheelQuietUntil) return;
-  wheelSum += e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1);
-  if (Math.abs(wheelSum) < 50) return;
-  const step = wheelSum > 0 ? 1 : -1;
-  wheelSum = 0; wheelQuietUntil = now + 280;
+// The scroll wheel, a trackpad's two-finger swipe, or a pinch, over the scope: up (away from you) or pinching out,
+// one range in; down or pinching in, one out. A trackpad sends many small steps per swipe, so they're added up, and
+// a step then waits a moment: one swipe, one range. Over the scope only, so the rest of the page scrolls (and zooms)
+// as usual. Chrome, Edge and Firefox send a pinch as a wheel with ctrlKey; Safari as gesture events.
+let wheelSum = 0, wheelQuietUntil = 0, pinchScale = 1;
+function rangeStep(step) {
+  wheelSum = 0; wheelQuietUntil = performance.now() + 280;
   fetch("/api/range-step", { method: "POST", body: JSON.stringify({ step }) }).catch(() => {}).then(poll);
+}
+scope.addEventListener("wheel", e => {
+  if (!state) return;
+  e.preventDefault();                                     // (over the scope: no page scroll, no browser zoom)
+  if (!canChange() || performance.now() < wheelQuietUntil) return;
+  const px = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1);
+  wheelSum += e.ctrlKey ? px * 8 : px;                    // (a pinch's steps are small)
+  if (Math.abs(wheelSum) >= 50) rangeStep(wheelSum > 0 ? 1 : -1);
 }, { passive: false });
 scope.addEventListener("mouseleave", () => { wheelSum = 0; });
+scope.addEventListener("gesturestart", e => { e.preventDefault(); pinchScale = 1; });
+scope.addEventListener("gesturechange", e => {
+  e.preventDefault();
+  if (!state || !canChange() || performance.now() < wheelQuietUntil) return;
+  const ratio = e.scale / pinchScale;
+  if (ratio > 1.25 || ratio < 0.8) { pinchScale = e.scale; rangeStep(ratio > 1 ? -1 : 1); }
+});
+scope.addEventListener("gestureend", e => e.preventDefault());
 scope.addEventListener("mousemove", e => {
   const r = scope.getBoundingClientRect();
   scope.style.cursor = hitAt(e.clientX - r.left, e.clientY - r.top) ? "pointer" : "default";

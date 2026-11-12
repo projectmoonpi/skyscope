@@ -2,6 +2,9 @@
 // while it runs, red when it's stopped ("Starting..." in its tooltip and a notice while it starts), so it can be
 // started again from there. Its menu: Open <page> (also a left click), Start and Stop <App> Service. Those only
 // start and stop the app in the background, as the Start menu's Start and Stop do.
+// A newer version: the app itself asks GitHub now and then (its /api/update); the icon asks the app every half hour,
+// and the first time it hears of a version, Windows shows a notice ("<App> <version> is available: click to update").
+// Its menu then has "Update to <version>...", which opens the app's Update button (App.UpdatePath).
 // One at a time (a named mutex); Start <App> opens it when it isn't there. The installer and uninstaller close it
 // (Runner.Stop with closeTray), so <App>.exe can be replaced or removed.
 // Designed and Created by Project Moon Pi.
@@ -9,6 +12,8 @@ using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Net;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -65,6 +70,29 @@ static class Tray
 
     enum State { Unknown, Stopped, Starting, Running, Stopping }
 
+    // the newer version the app knows of, or null (none, or it isn't answering); known: the app has heard from GitHub
+    static string NewerVersion(int port, out bool known)
+    {
+        known = false;
+        try
+        {
+            var r = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:" + port + "/api/update");
+            r.Timeout = 3000; r.ReadWriteTimeout = 3000; r.Proxy = null;
+            using (var resp = r.GetResponse())
+            using (var rd = new StreamReader(resp.GetResponseStream()))
+            {
+                string json = rd.ReadToEnd();
+                known = Regex.IsMatch(json, "\"latest\"\\s*:\\s*\"");
+                if (!Regex.IsMatch(json, "\"newer\"\\s*:\\s*true")) return null;
+                var m = Regex.Match(json, "\"latest\"\\s*:\\s*\"([0-9][0-9A-Za-z.\\-]*)\"");
+                return m.Success ? m.Groups[1].Value : null;
+            }
+        }
+        catch { return null; }
+    }
+
+    static string ToldFile(string dir) { return Path.Combine(dir, App.Slug + "-update-told.txt"); }
+
     public static int Run(string dir)
     {
         bool mine;
@@ -83,7 +111,9 @@ static class Tray
             var open = new ToolStripMenuItem("Open " + App.PageName) { Font = new Font(menu.Font, FontStyle.Bold) };
             var start = new ToolStripMenuItem("Start " + App.Name + " Service");
             var stop = new ToolStripMenuItem("Stop " + App.Name + " Service");
-            menu.Items.AddRange(new ToolStripItem[] { open, new ToolStripSeparator(), start, stop });
+            var update = new ToolStripMenuItem("Update") { Visible = false };
+            var updateLine = new ToolStripSeparator { Visible = false };
+            menu.Items.AddRange(new ToolStripItem[] { open, new ToolStripSeparator(), start, stop, updateLine, update });
             var icon = new NotifyIcon { Icon = off, Text = App.Name, ContextMenuStrip = menu, Visible = true };
             var ui = SynchronizationContext.Current ?? new WindowsFormsSynchronizationContext();
 
@@ -91,6 +121,9 @@ static class Tray
             State asked = State.Unknown;                           // Start or Stop clicked here, until it's done
             DateTime askedAt = DateTime.MinValue;
             int checking = 0;
+
+            string newer = null;
+            bool updateBalloon = false;                         // (the notice showing is the update's: a click updates)
 
             Action<State> show = s =>
             {
@@ -104,10 +137,46 @@ static class Tray
                 stop.Enabled = s == State.Running || s == State.Starting;
                 open.Enabled = s != State.Stopping;
                 if (was == State.Unknown || was == s) return;
+                updateBalloon = false;
                 if (s == State.Running) icon.ShowBalloonTip(4000, App.Name, App.Name + " is running.", ToolTipIcon.Info);
                 else if (s == State.Stopped) icon.ShowBalloonTip(4000, App.Name, App.Name + " has stopped. Start it again from this icon.", ToolTipIcon.Info);
                 else if (s == State.Starting && App.StartingNote != null) icon.ShowBalloonTip(5000, App.Name, App.StartingNote, ToolTipIcon.Info);
             };
+
+            // a newer version: asked of the app every half hour (first after half a minute), away from the window
+            Action openUpdate = () => Proc.Open("http://127.0.0.1:" + port + App.UpdatePath);
+            update.Click += (s, e) => openUpdate();
+            icon.BalloonTipClicked += (s, e) => { if (updateBalloon) openUpdate(); };
+            icon.BalloonTipClosed += (s, e) => updateBalloon = false;
+            int asking = 0;
+            var updateTimer = new System.Windows.Forms.Timer { Interval = 30000 };
+            Action askUpdate = () =>
+            {
+                if (state != State.Running || Interlocked.Exchange(ref asking, 1) == 1) return;
+                ThreadPool.QueueUserWorkItem(_ =>
+                {
+                    bool known;
+                    string v = NewerVersion(port, out known);
+                    ui.Post(__ =>
+                    {
+                        asking = 0;
+                        updateTimer.Interval = known ? 30 * 60 * 1000 : 2 * 60 * 1000;   // (not heard yet: ask again soon)
+                        if (v == null && state == State.Running) { newer = null; update.Visible = updateLine.Visible = false; return; }
+                        if (v == null || v == newer) return;
+                        newer = v;
+                        update.Text = "Update to " + App.Name + " " + v + "...";
+                        update.Visible = updateLine.Visible = true;
+                        string told = null;
+                        try { told = File.ReadAllText(ToldFile(dir)).Trim(); } catch { }
+                        if (told == v) return;                  // (said once for each version)
+                        try { File.WriteAllText(ToldFile(dir), v); } catch { }
+                        updateBalloon = true;
+                        icon.ShowBalloonTip(10000, App.Name + " " + v + " is available",
+                                            "Click here to update. Your settings are kept.", ToolTipIcon.Info);
+                    }, null);
+                });
+            };
+            updateTimer.Tick += (s, e) => askUpdate();
 
             // every 2 seconds, away from the window: is it answering, or has it been started and not answering yet?
             var timer = new System.Windows.Forms.Timer { Interval = 2000 };
@@ -160,8 +229,10 @@ static class Tray
 
             show(Web.Up(port, 800) ? State.Running : Runner.HostProcess(dir) != null ? State.Starting : State.Stopped);
             timer.Start();
+            updateTimer.Start();
             Application.Run();
             timer.Stop();
+            updateTimer.Stop();
             icon.Visible = false;
             icon.Dispose();
             Files.TryDelete(PidFile(dir));

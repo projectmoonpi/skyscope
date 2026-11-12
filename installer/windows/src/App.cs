@@ -31,6 +31,7 @@ static partial class App
     public const int DefaultPort = 7700;
     public const string OpenPath = "/radar";
     public const string ProbePath = "/radar";
+    public const string UpdatePath = "/radar_config#about";   // the Update button, for the icon's "Update to <version>..." (Tray.cs)
     public const string PageName = "the radar";
     public static readonly string StopHeader = "X-SkyScope";         // its /api/shutdown request (null: it has none)
     public const int StartSeconds = 90;
