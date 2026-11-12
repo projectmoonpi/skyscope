@@ -1576,6 +1576,18 @@ def start_tray(port: int):
         return None
 
 
+def listen_host(settings: Settings, given: str) -> str:
+    """Where the web pages listen: Settings › General › Phones, tablets and Satellites, once it's set; until then as
+    started (--host: the installer's answer), which is written down as the setting."""
+    if settings.phones == "on":
+        return "0.0.0.0"
+    if settings.phones == "off":
+        return "127.0.0.1"
+    settings.phones = "off" if given in ("127.0.0.1", "localhost", "::1") else "on"
+    settings.save()
+    return given
+
+
 def run_web_only(settings: Settings, host: str = "0.0.0.0", open_browser: bool = True, tray: bool = False) -> int:
     """Data, GPS and web server only; the browser draws the radar."""
     import signal
@@ -1587,7 +1599,7 @@ def run_web_only(settings: Settings, host: str = "0.0.0.0", open_browser: bool =
     # Geometry only: an off-screen surface stands in for the window.
     app = SkyScope(pygame.Surface((1920, 1080)), settings, feed)
     feed.start()
-    web = SettingsServer(settings, settings.web_port, app.web_statuses, app, host)
+    web = SettingsServer(settings, settings.web_port, app.web_statuses, app, listen_host(settings, host))
     if not web.start():
         return 1
     url = f"http://localhost:{settings.web_port}/radar"
@@ -1719,7 +1731,8 @@ def main() -> int:
     feed = AdsbFeed(settings.fetch_interval_s, settings.data_source, settings.sdr_location)
     app = SkyScope(screen, settings, feed)
     feed.start()
-    web = SettingsServer(settings, settings.web_port, app.web_statuses, app, args.host) if settings.web_port else None
+    web = SettingsServer(settings, settings.web_port, app.web_statuses, app, listen_host(settings, args.host)) \
+        if settings.web_port else None
     if web and web.start():
         app.web_url = f"http://{lan_address()}:{settings.web_port}/radar_config"
 

@@ -1,5 +1,5 @@
 """SkyScope's version, shown on the settings page's About tab, and Project Moon Pi's web addresses."""
-VERSION = "1.10.0"
+VERSION = "1.11.0"
 
 WEBSITE = "https://www.projectmoonpi.com"
 PAGE = WEBSITE + "/skyscope/"                    # SkyScope's page on it

@@ -34,6 +34,7 @@ class Mode
 static class Ui
 {
     public static bool Unattended;
+    public static bool ShowErrors;      // (with Unattended: an update from the app, which still says if it failed)
     public static string Folder;
     public static bool WentBack;
     static Form form;
@@ -334,9 +335,9 @@ static class Ui
 
     public static void Error(string message)
     {
-        if (form == null || Unattended)
+        if (form == null || (Unattended && !ShowErrors))
         {
-            if (!Unattended) MessageBox.Show(message, App.Name, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            if (!Unattended || ShowErrors) MessageBox.Show(message, App.Name, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             Close();
             return;
         }

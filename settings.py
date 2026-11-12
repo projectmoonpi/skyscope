@@ -89,6 +89,10 @@ class Settings:
     check_updates: bool = True  # ask GitHub now and then for a newer SkyScope (updates.py)
     # changes from other devices (phones, tablets, other computers): "off" view only, "pin" after the PIN, "on"
     # allowed. The computer running SkyScope can always change everything, and only it can change these two.
+    # phones, tablets and Satellites on your network: "on" (SkyScope listens on the network) or "off" (this computer
+    # only). Set on the computer running SkyScope (General tab); "" until then: as it was started (the installer's
+    # answer), written down at the first start
+    phones: str = ""
     remote_changes: str = "off"
     remote_pin_hash: str = ""   # the PIN, hashed (web.pin_hash)
     filter_presets: dict = field(default_factory=dict)  # your saved presets: name → filter values

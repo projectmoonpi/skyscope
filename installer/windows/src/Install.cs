@@ -219,6 +219,8 @@ static class Install
 
     // ---- the install
 
+    static bool Updating;
+
     public static int Begin()
     {
         App.LogHeader("installer");
@@ -230,7 +232,12 @@ static class Install
             Ui.Error("The installer couldn't unpack " + App.Name + "'s files.\n\n" + e.Message + "\n\nWhat the installer did is in " + App.LogFile + "." + App.Help);
             return 1;
         }
-        Ui.Unattended = !string.IsNullOrEmpty(Env("SS_PHONES"));
+        // --update (the app's own Update button, once the download's signature checked out): no questions, the
+        // answers from the last install kept (folder, phones, start at sign-in, Desktop icons), the window showing
+        // its progress, nothing to click unless it fails, and no admin prompt (the firewall is left as it is)
+        Updating = Environment.GetCommandLineArgs().Skip(1).Contains("--update");
+        Ui.Unattended = Updating || !string.IsNullOrEmpty(Env("SS_PHONES"));
+        Ui.ShowErrors = Updating;
         if (!File.Exists(Path.Combine(Src, "version.py")))
         {
             // an installer without the program's files, away from its folder
@@ -507,7 +514,7 @@ static class Install
         // phones and Satellites: make sure the firewall lets them in on home networks (Windows asks for
         // permission only if needed, and a note says so first)
         string networkNote = null;
-        if (phones)
+        if (phones && !Updating)
         {
             Ui.Progress("Finishing setting up " + App.Name + "...", 89);     // (the firewall, for phones)
             string state = Firewall.Ensure(port, BasePythonW(AppDir), Ui.Unattended);
@@ -517,7 +524,7 @@ static class Install
             else if (state != "AllowedPublic" && Firewall.OnPublicNetwork())
                 networkNote = "This PC's network is set to Public, where Windows keeps other devices out. For " + App.PhonesShort + " to reach " + App.Name + ", set your home Wi-Fi to Private: Settings > Network & Internet > (your connection) > Private.";
         }
-        else Firewall.Remove(port, Ui.Unattended);
+        else if (!phones && !Updating) Firewall.Remove(port, Ui.Unattended);
         if (networkNote != null) App.Log(networkNote);
 
         Ui.Progress("Starting " + App.Name + "...", 90);
@@ -556,6 +563,24 @@ static class Install
 
     // the Python program that actually listens (a venv's pythonw.exe starts its base Python's): the firewall's
     // "allow this app?" rules name that one
+    // <App>.exe --allow-phones: the app's own Settings turned phones on, so make sure Windows' firewall lets them in on
+    // home networks (Windows asks an administrator only if our rule isn't there), as the installer does
+    public static int AllowPhones(string dir)
+    {
+        App.LogHeader("allow phones");
+        string state = Firewall.Ensure(App.InstalledPort(dir), BasePythonW(dir), false);
+        App.Log("firewall: " + state);
+        if (state == "Declined")
+            System.Windows.Forms.MessageBox.Show("Windows didn't allow the firewall change, so " + App.PhonesShort + " can't reach " + App.Name +
+                            " yet. Turn the setting off and on again, and click Yes when Windows asks.", App.Name,
+                            System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Warning);
+        else if (state != "AllowedPublic" && Firewall.OnPublicNetwork())
+            System.Windows.Forms.MessageBox.Show("This PC's network is set to Public, where Windows keeps other devices out. For " + App.PhonesShort +
+                            " to reach " + App.Name + ", set your home Wi-Fi to Private: Settings > Network & Internet > " +
+                            "(your connection) > Private.", App.Name, System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Information);
+        return 0;
+    }
+
     static string BasePythonW(string dir)
     {
         try

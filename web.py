@@ -9,10 +9,13 @@ redirecting.
 
 import html
 import json
+import os
 import queue
 import re
 import socket
+import subprocess
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs
@@ -99,6 +102,7 @@ FIELDS = [
     ("watchlist", "Watchlist", "watch", 1000),
     ("watch_notice", "Show a notice when a watched aircraft is in range", "bool", None),
     ("check_updates", "Check for a newer SkyScope (asks GitHub a few times a day)", "bool", None),
+    ("phones", "Phones, tablets and Satellites", "choice", [("on", "Can open SkyScope"), ("off", "This computer only")]),
     ("remote_changes", "Changes from other devices", "access",
      [("off", "View only"), ("pin", "With a PIN"), ("on", "Allowed")]),
     ("remote_pin", "PIN for other devices", "pin", None),
@@ -132,6 +136,11 @@ CHOICE_HINTS = {
         "standard": "Aircraft, runways and airspace in their usual colours.",
         "green": "Aircraft, labels, runways, airspace and SIDs/STARs all in green, like an older ATC radar "
                  "screen. Emergencies and the watchlist keep their colours.",
+    },
+    "phones": {
+        "on": "Phones, tablets and SkyScope Satellite displays on your Wi-Fi can open the radar (About shows the "
+              "address and a QR code).",
+        "off": "Only this computer can open SkyScope. Phones and Satellites can't reach it.",
     },
     "data_source": {
         "internet": "Live data from adsb.fi. Needs a network connection.",
@@ -774,8 +783,8 @@ def connect_info(host: str, port: int) -> dict:
     notes = []
     if not phones:
         notes.append("This SkyScope answers this computer only, so phones and tablets can't open it. To let them, "
-                     "run Install SkyScope again and tick \"Let phones, tablets and SkyScope Satellite displays on "
-                     "my Wi-Fi open it\".")
+                     "set Phones, tablets and Satellites to \"Can open SkyScope\" in Settings › General, on this "
+                     "computer.")
     elif address.startswith(("127.", "169.254.")):
         notes.append("This computer isn't connected to a network, so phones can't reach it.")
     else:
@@ -958,6 +967,8 @@ def parse_form(form: dict[str, list[str]]) -> tuple[dict, list[str]]:
                     continue
                 changes["remote_pin_hash"] = pin_hash(raw)
         elif kind == "choice":
+            if name == "phones" and name not in form:
+                continue                                  # (only this computer's page has it)
             if raw not in [value for value, _ in extra]:
                 errors.append(f"{label}: invalid choice")
                 continue
@@ -1137,7 +1148,11 @@ def render_page(st: Settings, banner: str = "", statuses: dict[str, str] | None 
     # other devices: only this computer sees the controls (and only its changes to them count: do_POST)
     names = dict(BY_NAME["remote_changes"][3])
     if access == "local":
-        devices = (field("remote_changes", seg("remote_changes", BY_NAME["remote_changes"][3], st.remote_changes))
+        devices = (choice("phones", st)
+                   + ('<div class="hint" data-when="phones=on">Windows: turning this on may ask for an administrator\'s '
+                      "OK once, to open SkyScope's port in the firewall for your home network.</div>"
+                      if os.name == "nt" else "")
+                   + field("remote_changes", seg("remote_changes", BY_NAME["remote_changes"][3], st.remote_changes))
                    + field("remote_pin", '<input type="password" name="remote_pin" inputmode="numeric" maxlength="8" '
                            'autocomplete="new-password" placeholder="'
                            + ("Saved: leave blank to keep it" if st.remote_pin_hash else "4 to 8 digits") + '">')
@@ -1145,14 +1160,15 @@ def render_page(st: Settings, banner: str = "", statuses: dict[str, str] | None 
                      'the radar and these pages. This decides whether they can also change settings, filters and '
                      'the range. This computer can always change everything, and only it can change this.</div>')
     else:
-        devices = (f'<div class="facts-line">{esc(names.get(st.remote_changes, "View only"))}</div>'
-                   '<div class="hint">Set on the computer running SkyScope.</div>')
+        devices = (f'<div class="facts-line">Changes: {esc(names.get(st.remote_changes, "View only"))}</div>'
+                   '<div class="hint">Set on the computer running SkyScope, as is whether phones and tablets can '
+                   'open it.</div>')
     general = tab("general", "Where the radar is centred and where its aircraft and route data come from.",
                   card("Location", location, statuses.get("Location", ""))
                   + '<div class="stack">'  # routes directly under the data source
                   + card("Aircraft data", data, statuses.get("Aircraft data", ""))
                   + card("Flight routes", flight_routes, statuses.get("Flight routes", ""))
-                  + card("Changes from other devices", devices) + "</div>")
+                  + card("Phones, tablets and other devices", devices) + "</div>")
 
     # --- Display: units, scope, sweep ----------------------------------------------
     units = (choice("distance_unit", st) + choice("speed_unit", st) + choice("altitude_unit", st))
@@ -1380,8 +1396,9 @@ def render_page(st: Settings, banner: str = "", statuses: dict[str, str] | None 
                '<div class="hint" id="up-job"></div>'
                '<a class="hint up-self" id="up-get" hidden target="_blank" rel="noopener">Or download it yourself</a></div>'
                + toggle("check_updates", st)
-               + '<div class="hint">Update downloads the new version, checks it and opens its installer: click '
-                 'Update there, and your settings are kept.</div>')
+               + '<div class="hint">Update downloads the new version, checks it\'s signed by Project Moon Pi (it '
+                 "won't install anything else) and installs it with no questions: your settings and choices are "
+                 "kept, and SkyScope restarts by itself in a minute or so.</div>")
         + card("This SkyScope",
                '<dl class="facts">'
                f"<dt>Version</dt><dd>{esc(VERSION)}</dd>"
@@ -1412,6 +1429,34 @@ def render_page(st: Settings, banner: str = "", statuses: dict[str, str] | None 
         bar_class, state_text = bar_class + " locked", "View only on this device" if access == "view" else "Locked: enter the PIN above"
     return (PAGE.replace("%%TABS%%", nav).replace("%%BANNER%%", banner).replace("%%BODY%%", body)
             .replace("%%BARCLASS%%", bar_class).replace("%%STATE%%", esc(state_text)))
+
+
+def installed_phones(on: bool) -> None:
+    """The installer's copy of the phones answer, so its next update (or repair) keeps what was chosen here: Windows'
+    install.json, the Mac's settings.sh. On Windows, turning phones on also makes sure the firewall lets them in on
+    home networks: SkyScope.exe --allow-phones does that (Windows asks an administrator, if its rule isn't there)."""
+    here = Path(__file__).resolve().parent
+    try:
+        info = here / "install.json"
+        if info.exists():
+            data = json.loads(info.read_text(encoding="utf-8-sig"))
+            data["phones"] = on
+            info.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        sh = here / "settings.sh"
+        if sh.exists():
+            text = sh.read_text()
+            text = re.sub(r"^PHONES=.*$", f"PHONES={'yes' if on else 'no'}", text, flags=re.M) if "PHONES=" in text \
+                else text + f"PHONES={'yes' if on else 'no'}\n"
+            sh.write_text(text)
+    except (OSError, ValueError) as exc:
+        print(f"web: the installer's phones answer wasn't updated: {exc}")
+    exe = here / "SkyScope.exe"
+    if on and os.name == "nt" and exe.exists():
+        try:
+            subprocess.Popen([str(exe), "--allow-phones"], cwd=str(here), close_fds=True,
+                             creationflags=0x00000008 | 0x00000200)     # DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
+        except OSError as exc:
+            print(f"web: the firewall couldn't be checked: {exc}")
 
 
 class SettingsServer:
@@ -1669,6 +1714,7 @@ class SettingsServer:
                 if access != "local":   # who may change things, and the PIN: this computer only
                     changes.pop("remote_changes", None)
                     changes.pop("remote_pin_hash", None)
+                    changes.pop("phones", None)
                 if not errors:
                     errors = apply_preset_action(form, changes, server_ref.settings)
                 if errors:
@@ -1682,9 +1728,12 @@ class SettingsServer:
                     if changes.get("location_source") == "manual":
                         changes["location_source"] = "gps_once"
                     changes["_gps_now"] = True
+                phones_before = server_ref.settings.phones
                 done = threading.Event()
                 server_ref._pending.put((changes, done))
                 done.wait(2.0)  # until the render loop has applied it
+                if changes.get("phones", phones_before) != phones_before:
+                    server_ref.phones_changed()           # (listen on the network, or this computer only)
                 action = (form.get("action") or ["save"])[0]
                 result = "gps" if path == GPS_NOW_PATH else {
                     "apply_preset": "applied", "save_preset": "presetsaved",
@@ -1693,15 +1742,44 @@ class SettingsServer:
                 self.send_header("Location", f"{CONFIG_PATH}?{result}=1")
                 self.end_headers()
 
+        self._handler = Handler
         try:
             httpd = ThreadingHTTPServer((self.host, self.port), Handler)
         except OSError as exc:
             print(f"web: can't listen on port {self.port}: {exc}")
             return False
+        self.httpd = httpd
         threading.Thread(target=httpd.serve_forever, name="web", daemon=True).start()
         where = lan_address() if self.host == "0.0.0.0" else self.host
         print(f"Settings page: http://{where}:{self.port}{CONFIG_PATH}")
         return True
+
+    def phones_changed(self) -> None:
+        """Settings › General › Phones, tablets and Satellites changed: listen on the network (0.0.0.0) or on this
+        computer only (127.0.0.1), from a moment after the page's answer has gone out; and keep the installer's copy
+        of the answer in step (its next update keeps it), with the firewall on Windows (installed_phones)."""
+        on = self.settings.phones == "on"
+        host = "0.0.0.0" if on else "127.0.0.1"
+        installed_phones(on)
+        if host == self.host or getattr(self, "httpd", None) is None:
+            return
+
+        def move():
+            time.sleep(0.5)
+            old = self.httpd
+            old.shutdown()
+            old.server_close()
+            for h in (host, self.host):               # (if the new address won't do, the old one again)
+                try:
+                    self.httpd = ThreadingHTTPServer((h, self.port), self._handler)
+                except OSError as exc:
+                    print(f"web: can't listen on {h}:{self.port}: {exc}")
+                    continue
+                self.host = h
+                threading.Thread(target=self.httpd.serve_forever, name="web", daemon=True).start()
+                print(f"web: now answering {'the network' if h == '0.0.0.0' else 'this computer only'}")
+                return
+        threading.Thread(target=move, name="web-move", daemon=True).start()
 
     def procedure_rows(self) -> list[dict]:
         return self.radar.procedure_table() if self.radar is not None else []

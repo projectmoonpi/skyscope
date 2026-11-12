@@ -3,6 +3,7 @@
 //   Uninstall <App>.exe   the uninstaller's window
 //   <App>.exe             Start, Stop and the app's own process (Runner.cs)
 // and, whatever its name, --firewall allow|remove <port> [program]: the firewall change, run with admin rights.
+// <App>.exe --allow-phones: the app's Settings turned phones on (Install.AllowPhones: the firewall, as installing does).
 // No PowerShell anywhere: antivirus programs (Bitdefender's Advanced Threat Defense, in our tests) take a hidden
 // PowerShell that downloads, compiles and asks for admin rights for malware, whatever the script does.
 // Designed and Created by Project Moon Pi.
@@ -27,6 +28,7 @@ static class Program
             string dir = App.Here;
             if (args.Contains("--run")) return Runner.Run(dir);
             if (args.Contains("--tray")) return Tray.Run(dir);
+            if (args.Contains("--allow-phones")) return Install.AllowPhones(dir);   // (the app's Settings turned phones on)
             if (args.Contains("--stop")) return Runner.Stop(dir, args.Contains("--quiet"));
             if (args.Contains("--uninstall"))
             {

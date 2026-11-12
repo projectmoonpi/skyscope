@@ -20,8 +20,8 @@ in any web browser (sharp on Retina and high-DPI screens).
 
 ## Download
 
-**[SkyScope 1.10.0 for Mac](https://github.com/projectmoonpi/skyscope/releases/download/v1.10.0/SkyScope-1.10.0-for-Mac.dmg)** ·
-**[SkyScope 1.10.0 for Windows](https://github.com/projectmoonpi/skyscope/releases/download/v1.10.0/Install-SkyScope-1.10.0-for-Windows.exe)**
+**[SkyScope 1.11.0 for Mac](https://github.com/projectmoonpi/skyscope/releases/download/v1.11.0/SkyScope-1.11.0-for-Mac.dmg)** ·
+**[SkyScope 1.11.0 for Windows](https://github.com/projectmoonpi/skyscope/releases/download/v1.11.0/Install-SkyScope-1.11.0-for-Windows.exe)**
 (also on [projectmoonpi.com/downloads](https://www.projectmoonpi.com/downloads/#skyscope), or the
 [latest release](../../releases/latest) page): one file. On a Mac, open it and double-click
 **Install SkyScope**; on Windows, double-click it. The [laptop and desktop section](#running-on-a-laptop-or-desktop-mac-windows-linux) below
@@ -329,8 +329,12 @@ settings page.
   the radar, the menu bar icon's menu (Mac), a notice and menu item from the
   icon by the clock (Windows, once per version) and About's **Updates** card
   say when there is one. **Update to <version>** (on the computer running SkyScope) downloads
-  it in the background, checks its SHA-256 against GitHub's, unpacks it and
-  opens its installer in front; its **Update** keeps your settings.
+  it in the background, checks it's **signed by Project Moon Pi** (`signing.py`: Ed25519, against
+  the key built into your copy; anything unsigned or changed is refused), then installs it with no
+  questions, keeping your settings and install answers, and SkyScope restarts by itself.
+- **Phones on or off:** Settings › General › *Phones, tablets and Satellites* (on the computer
+  running SkyScope only) lets other devices on your Wi-Fi open it, or keeps it to this computer.
+  It takes effect at once; on Windows, turning it on may ask for an administrator's OK once (the firewall).
 - **Click a plane** (its symbol or label) **or a row in the table** to select
   it: cyan brackets on the scope, its label outlined and always shown, its row
   highlighted, and the card shows its details as "SELECTED" instead of the
@@ -369,8 +373,8 @@ device on the network can open `/radar` while the Pi drives the TV.
 
 ## Running on a laptop or desktop (Mac, Windows, Linux)
 
-**The easy way (Mac or Windows):** download **[for Mac](https://github.com/projectmoonpi/skyscope/releases/download/v1.10.0/SkyScope-1.10.0-for-Mac.dmg)**
-or **[for Windows](https://github.com/projectmoonpi/skyscope/releases/download/v1.10.0/Install-SkyScope-1.10.0-for-Windows.exe)**
+**The easy way (Mac or Windows):** download **[for Mac](https://github.com/projectmoonpi/skyscope/releases/download/v1.11.0/SkyScope-1.11.0-for-Mac.dmg)**
+or **[for Windows](https://github.com/projectmoonpi/skyscope/releases/download/v1.11.0/Install-SkyScope-1.11.0-for-Windows.exe)**
 (also on the [latest release](../../releases/latest)): one file. On a Mac, open the disk image and
 double-click **Install SkyScope**; on Windows, double-click the downloaded installer. It runs on Python 3.10 or newer from
 [python.org](https://www.python.org/downloads/); if the computer hasn't got
@@ -404,7 +408,8 @@ right-click it for **Open the radar**, **Start SkyScope Service** and **Stop
 SkyScope Service**. Activity Monitor and Task Manager list it as
 **SkyScope**.
 
-Run the installer again to update or to change your answers. When SkyScope is
+Run the installer again to update or to change your answers (phones can also be switched on or off in
+Settings › General). When SkyScope is
 already installed it offers **Update** (compares the installed files with the new
 ones and copies only those that differ), **Repair** (checks every installed file
 and puts back any that are damaged or missing) or **Reinstall from scratch**
@@ -589,6 +594,7 @@ scope design, range presets and colours were the starting point.
 | Secure connections (installed copies) | [truststore](https://github.com/sethmlarson/truststore) by Seth Larson: HTTPS checked with the computer's own certificates | MIT |
 | QR codes for phones | [QR Code Generator for JavaScript](https://github.com/kazuhikoarase/qrcode-generator) by Kazuhiko Arase (`web/qrcode.js`, 1.4.4) | MIT |
 | Windows installer | C# on Microsoft's .NET Framework 4.8 (Windows Forms), built with [Mono](https://www.mono-project.com)'s C# compiler (Roslyn) | .NET Framework: part of Windows; Mono and Roslyn: MIT |
+| Signed updates | Signatures made with [OpenSSH](https://www.openssh.com)'s `ssh-keygen -Y sign`; checked by `signing.py`, an Ed25519 check written from [RFC 8032](https://www.rfc-editor.org/rfc/rfc8032) | BSD (OpenSSH) |
 | Built with | [Claude Code](https://claude.com/claude-code) (Anthropic): designed, written and tested with Claude | |
 
 **Not for navigation.** Map layers are approximations for watching traffic;
