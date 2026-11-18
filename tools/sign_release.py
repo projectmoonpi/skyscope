@@ -2,7 +2,7 @@
 """Signs a release's downloads with Project Moon Pi's release key, so the app's Update installs only what was signed
 here (signing.py checks it before installing anything):
 
-    python3 tools/sign_release.py dist/SkyScope-1.11.0-for-Mac.dmg dist/Install-SkyScope-1.11.0-for-Windows.exe
+    python3 tools/sign_release.py dist/SkyScope-1.12.0-for-Mac.dmg dist/Install-SkyScope-1.12.0-for-Windows.exe
 
 writes <file>.sig beside each (OpenSSH's "ssh-keygen -Y sign", namespace projectmoonpi-update), checks each with the
 app's own signing.py, and stops if anything's wrong. Upload the .sig files to the release with the downloads.
