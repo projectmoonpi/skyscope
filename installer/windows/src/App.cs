@@ -95,7 +95,7 @@ static partial class App
     };
 
     // the program's files, copied from the installer's folder (filecheck.py sync compares them)
-    public static readonly string[] ProgramItems = { "*.py", "web", "data", "docs", "README.md", "LICENSE" };
+    public static readonly string[] ProgramItems = { "*.py", "src", "data", "docs", "README.md", "LICENSE" };
     // kept through updates and repairs (and moved along when the install folder changes)
     public static readonly string[] Keep = { "settings.json", "flightaware_usage.json", "logos_cache" };
 

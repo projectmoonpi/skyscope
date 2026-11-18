@@ -26,7 +26,7 @@ import webbrowser
 from datetime import datetime
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
+HERE = Path(__file__).resolve().parent.parent           # the app folder (src/ is the program)
 POLL_S = 3
 GREEN = (61, 220, 132)
 GREY = (138, 138, 138)

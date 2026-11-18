@@ -238,7 +238,7 @@ static class Install
         Updating = Environment.GetCommandLineArgs().Skip(1).Contains("--update");
         Ui.Unattended = Updating || !string.IsNullOrEmpty(Env("SS_PHONES"));
         Ui.ShowErrors = Updating;
-        if (!File.Exists(Path.Combine(Src, "version.py")))
+        if (!File.Exists(Path.Combine(Src, @"src\version.py")))
         {
             // an installer without the program's files, away from its folder
             Ui.Say("Extract the zip first: right-click it, choose Extract All, then open Install " + App.Name +
@@ -275,7 +275,7 @@ static class Install
         string suggest = Env("SS_DIR") ?? (was != null && Guarded(was) == null ? was : null) ?? App.DefaultDir;   // (not a guarded folder an older copy went in)
 
         // already installed? Then update (this one's newer), repair (the same) or reinstall from scratch
-        string newVersion = Regex.Match(File.ReadAllText(Path.Combine(Src, "version.py")), "VERSION = \"([^\"]+)\"").Groups[1].Value;
+        string newVersion = Regex.Match(File.ReadAllText(Path.Combine(Src, @"src\version.py")), "VERSION = \"([^\"]+)\"").Groups[1].Value;
         string have = was == null ? null : App.InstalledVersion(was);
         var fresh = new Mode("Reinstall from scratch", "Removes everything " + App.Name + " put on this PC, its settings too, then installs it new. Only your FlightAware API key is kept.");
         string compare = "Compares the installed files with this installer's and copies only the ones that differ. Your settings and FlightAware key are kept.";
@@ -451,7 +451,7 @@ static class Install
         Ui.Progress(mode == "repair" ? "Checking " + App.Name + "'s program files..." : "Copying " + App.Name + "...", 77);
         if (!File.Exists(Path.Combine(AppDir, "installed-files.json")))
         {
-            foreach (var d in new[] { "web", "data", "docs" }) Files.TryDeleteDir(Path.Combine(AppDir, d));
+            foreach (var d in new[] { "src", "web", "data", "docs" }) Files.TryDeleteDir(Path.Combine(AppDir, d));
             foreach (var f in Directory.GetFiles(AppDir, "*.py")) Files.TryDelete(f);
         }
         string synced = Run(venvPy, new[] { check, "sync", mode == "repair" ? "repair" : "update", Src, AppDir }.Concat(App.ProgramItems),
@@ -476,7 +476,7 @@ static class Install
         }
         Files.Unblock(AppDir);     // drop the "downloaded from the internet" mark on our copies
 
-        string version = Regex.Match(File.ReadAllText(Path.Combine(AppDir, "version.py")), "VERSION = \"([^\"]+)\"").Groups[1].Value;
+        string version = Regex.Match(File.ReadAllText(Path.Combine(AppDir, @"src\version.py")), "VERSION = \"([^\"]+)\"").Groups[1].Value;
         int port = App.PortOf(AppDir);
         Json.Write(Path.Combine(AppDir, App.InfoFile), new Dictionary<string, object> {
             { "port", port }, { "phones", phones }, { "autostart", autostart }, { "desktop", onDesktop },

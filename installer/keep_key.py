@@ -36,9 +36,10 @@ def main(what, settings, kept):
             print(f"Kept your FlightAware API key for the next install: {kept}")
     elif what == "restore" and os.path.exists(kept):
         if not os.path.exists(settings):
-            # a new install: SkyScope's own defaults first (settings.py, beside settings.json, writes them), so the
+            # a new install: SkyScope's own defaults first (src/settings.py writes them), so the
             # key isn't all there is in the file
-            sys.path.insert(0, os.path.dirname(os.path.abspath(settings)))
+            app = os.path.dirname(os.path.abspath(settings))
+            sys.path[:0] = [os.path.join(app, "src"), app]     # src/ since 1.12.0; beside it before
             try:
                 from settings import Settings
                 Settings.load()

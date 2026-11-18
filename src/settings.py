@@ -6,7 +6,7 @@ import math
 from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
 
-SETTINGS_PATH = Path(__file__).resolve().parent / "settings.json"
+SETTINGS_PATH = Path(__file__).resolve().parent.parent / "settings.json"   # in the app folder, as before src/ (updates keep it)
 
 KM_PER_MILE = 1.609344
 KM_PER_NM = 1.852

@@ -244,7 +244,7 @@ slow down at the largest ranges.
 
 ## Settings
 
-Everything is stored in `settings.json` next to `skyscope.py` (created on
+Everything is stored in `settings.json` in SkyScope's folder, next to `skyscope.py` (created on
 first run). The web page and keys edit it for you; by hand you can also set:
 
 | Key | Default | Meaning |
@@ -325,11 +325,11 @@ settings page.
   can also change settings, filters and the range. The computer running SkyScope can always
   change everything, and only it can change this choice or the PIN.
 - **Updates:** SkyScope asks GitHub a few times a day for a newer release
-  (`updates.py`; off with *Check for a newer SkyScope* in About). A note on
+  (`src/updates.py`; off with *Check for a newer SkyScope* in About). A note on
   the radar, the menu bar icon's menu (Mac), a notice and menu item from the
   icon by the clock (Windows, once per version) and About's **Updates** card
   say when there is one. **Update to <version>** (on the computer running SkyScope) downloads
-  it in the background, checks it's **signed by Project Moon Pi** (`signing.py`: Ed25519, against
+  it in the background, checks it's **signed by Project Moon Pi** (`src/signing.py`: Ed25519, against
   the key built into your copy; anything unsigned or changed is refused), then installs it with no
   questions, keeping your settings and install answers, and SkyScope restarts by itself.
 - **Phones on or off:** Settings › General › *Phones, tablets and Satellites* (on the computer
@@ -449,6 +449,22 @@ devices, so on a Pi use GPS or type the position in.
 (Mac) or scaled-display (Windows) resolution, so the window is drawn at
 standard resolution and the OS enlarges it, which looks slightly soft. A Pi on
 an HDMI TV or monitor isn't affected: one drawn pixel is one screen pixel.
+
+## Where everything is
+
+| Folder | What's in it |
+|---|---|
+| `skyscope.py` | Starts SkyScope (it runs `src/skyscope.py`). Every launcher names this file |
+| `src/` | The program: `skyscope.py` (the radar), `web.py` (the web pages), the rest of its modules, and `web/` (the browser radar's page and pictures) |
+| `data/` | Airports, airspace, procedures and country codes (built by `tools/build_*.py`) |
+| `docs/` | The guide (`guide.html`, served by the settings page, and `SkyScope-Guide.pdf`) and its pictures |
+| `installer/` | The Mac and Windows installers' sources and the Windows programs |
+| `tools/` | Building the downloads and the data, signing releases, the launchers' icons |
+| `dist/` | The built downloads (not in git) |
+
+`settings.json`, `skyscope.log`, `logos/` and `logos_cache/` are made beside `skyscope.py` as SkyScope runs (not in
+git); updates leave them alone. The log is kept under 1 MB (cut back to its newest lines at each start), a
+dropped browser connection isn't logged, and a data-feed error is logged once, not every few seconds.
 
 ## Building the downloads
 

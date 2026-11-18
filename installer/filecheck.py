@@ -174,6 +174,11 @@ def sync(why, src, dest, items):
             os.remove(target)
             print(f"GONE {rel}")
             gone += 1
+            # and the folders that held it, once empty (e.g. web/ after SkyScope's program moved into src/)
+            folder = os.path.dirname(target)
+            while os.path.normpath(folder) != os.path.normpath(dest) and os.path.isdir(folder) and not os.listdir(folder):
+                os.rmdir(folder)
+                folder = os.path.dirname(folder)
     with open(os.path.join(dest, MANIFEST), "w") as f:
         json.dump(want, f, indent=0, sort_keys=True)
     total = len(want)

@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pygame
 
-HERE = Path(__file__).resolve().parent
+HERE = Path(__file__).resolve().parent.parent           # the app folder (src/ is the program): logos/ and logos_cache/ live there
 USER_DIR = HERE / "logos"
 CACHE_DIR = HERE / "logos_cache"
 MISSING_FILE = CACHE_DIR / "missing.txt"

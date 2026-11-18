@@ -9,7 +9,7 @@ from pathlib import Path
 
 import symbols
 
-HERE = Path(__file__).resolve().parent
+HERE = Path(__file__).resolve().parent.parent           # the app folder (src/ is the program)
 COUNTRIES_PATH = HERE / "data" / "icao_countries.json"
 
 # Aircraft classes, in the order shown on the settings page.

@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parent.parent))
+sys.path.insert(0, str(HERE.parent.parent / "src"))
 from tray import scope_icon, GREEN  # noqa: E402
 
 RED = (235, 64, 52)

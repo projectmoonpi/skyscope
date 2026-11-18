@@ -112,9 +112,9 @@ if [ "$MODE" = repair ]; then step 74 "Checking SkyScope's program files..."; el
 # the program: each file compared with this installer's, and only those that are damaged, missing or different are
 # copied (installed-files.json lists them, so files a new version doesn't have go); your settings, logo cache and
 # FlightAware count stay. (An install from before that list was kept: its program files are all replaced.)
-[ -f "$APPDIR/installed-files.json" ] || ( cd "$APPDIR" && rm -rf web data docs ./*.py )
+[ -f "$APPDIR/installed-files.json" ] || ( cd "$APPDIR" && rm -rf src web data docs ./*.py )
 rc=0
-"$VPY" "$CHECK" sync "$([ "$MODE" = repair ] && echo repair || echo update)" "$SRC" "$APPDIR" '*.py' web data docs README.md LICENSE > "$WORK/sync.txt" 2>&1 || rc=$?
+"$VPY" "$CHECK" sync "$([ "$MODE" = repair ] && echo repair || echo update)" "$SRC" "$APPDIR" '*.py' src data docs README.md LICENSE > "$WORK/sync.txt" 2>&1 || rc=$?
 cat "$WORK/sync.txt"
 [ "$rc" -le 1 ] || { echo "Couldn't copy SkyScope's files."; exit 1; }
 rm -rf "$APPDIR/installer"
@@ -126,9 +126,9 @@ fi
 # the uninstaller's window and work, run by Uninstall SkyScope
 mkdir -p "$APPDIR/installer/mac"
 cp "$SRC/installer/mac/window.py" "$SRC/installer/mac/uninstall.sh" "$SRC/installer/mac/common.sh" "$APPDIR/installer/mac/"
-VERSION=$(cd "$APPDIR" && "$APPDIR/venv/bin/python" -c 'from version import VERSION; print(VERSION)')
+VERSION=$(cd "$APPDIR/src" && "$APPDIR/venv/bin/python" -c 'from version import VERSION; print(VERSION)')
 PORT=$(cd "$APPDIR" && "$APPDIR/venv/bin/python" -c 'import json; print(json.load(open("settings.json")).get("web_port") or 7700)' 2>/dev/null || echo 7700)
-echo "Copied SkyScope $VERSION ($(ls "$APPDIR"/*.py | wc -l | tr -d ' ') program files, web pages, data, guide)"
+echo "Copied SkyScope $VERSION ($(ls "$APPDIR"/src/*.py | wc -l | tr -d ' ') program files, web pages, data, guide)"
 # a FlightAware key kept when SkyScope was last uninstalled comes back
 "$APPDIR/venv/bin/python" "$SRC/installer/keep_key.py" restore "$APPDIR/settings.json" "$KEPT_KEY" || true
 echo "Web port $PORT; phones and Satellites: $PHONES; start at login: $AUTOSTART"

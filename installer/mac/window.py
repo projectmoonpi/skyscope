@@ -51,7 +51,10 @@ UNINSTALL_STEPS = [10, 40, 75, 95, 100]
 
 def version_of(folder):
     try:
-        return re.search(r'VERSION = "([^"]+)"', open(os.path.join(folder, "version.py")).read()).group(1)
+        path = os.path.join(folder, "src", "version.py")           # since 1.12.0 the program is in src/
+        if not os.path.exists(path):
+            path = os.path.join(folder, "version.py")              # an install from before
+        return re.search(r'VERSION = "([^"]+)"', open(path).read()).group(1)
     except (OSError, AttributeError):
         return None
 

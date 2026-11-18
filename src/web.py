@@ -36,7 +36,7 @@ COUNTRY_NAMES = AircraftFilter().countries
 FILTER_MODES = [("off", "Off"), ("only", "Show only"), ("hide", "Hide")]
 
 RADAR_PAGE = Path(__file__).resolve().parent / "web" / "radar.html"
-DOCS_DIR = Path(__file__).resolve().parent / "docs"
+DOCS_DIR = Path(__file__).resolve().parent.parent / "docs"
 # The guide and its images/PDF: only these file types, only inside docs/.
 # The radar page's own files: the start-up splash's script and the badge it lights up.
 WEB_FILES_RE = re.compile(r"^/web/((?:img/)?[A-Za-z0-9._-]+\.(js|png|json))$")
@@ -1435,7 +1435,7 @@ def installed_phones(on: bool) -> None:
     """The installer's copy of the phones answer, so its next update (or repair) keeps what was chosen here: Windows'
     install.json, the Mac's settings.sh. On Windows, turning phones on also makes sure the firewall lets them in on
     home networks: SkyScope.exe --allow-phones does that (Windows asks an administrator, if its rule isn't there)."""
-    here = Path(__file__).resolve().parent
+    here = Path(__file__).resolve().parent.parent          # the app folder, where the installer keeps them
     try:
         info = here / "install.json"
         if info.exists():
@@ -1457,6 +1457,17 @@ def installed_phones(on: bool) -> None:
                              creationflags=0x00000008 | 0x00000200)     # DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
         except OSError as exc:
             print(f"web: the firewall couldn't be checked: {exc}")
+
+
+class QuietHTTPServer(ThreadingHTTPServer):
+    """The web pages' server. A browser or phone that leaves a page mid-answer (closes the tab, sleeps, loses Wi-Fi)
+    drops its connection: that's normal, so it isn't written to the log. Real errors still are, in full."""
+
+    def handle_error(self, request, client_address):
+        import sys
+        if isinstance(sys.exc_info()[1], (ConnectionError, TimeoutError)):   # reset, aborted, broken pipe, timed out
+            return
+        super().handle_error(request, client_address)
 
 
 class SettingsServer:
@@ -1744,7 +1755,7 @@ class SettingsServer:
 
         self._handler = Handler
         try:
-            httpd = ThreadingHTTPServer((self.host, self.port), Handler)
+            httpd = QuietHTTPServer((self.host, self.port), Handler)
         except OSError as exc:
             print(f"web: can't listen on port {self.port}: {exc}")
             return False
@@ -1771,7 +1782,7 @@ class SettingsServer:
             old.server_close()
             for h in (host, self.host):               # (if the new address won't do, the old one again)
                 try:
-                    self.httpd = ThreadingHTTPServer((h, self.port), self._handler)
+                    self.httpd = QuietHTTPServer((h, self.port), self._handler)
                 except OSError as exc:
                     print(f"web: can't listen on {h}:{self.port}: {exc}")
                     continue

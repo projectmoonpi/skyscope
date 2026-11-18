@@ -30,8 +30,8 @@ NAMESPACE = "projectmoonpi-update"
 
 
 def checker():
-    """The app's own signing.py (SkyScope: beside skyscope.py; Train Tracker: in the package)."""
-    for p in (ROOT / "signing.py", ROOT / "src" / "train_tracker" / "signing.py"):
+    """The app's own signing.py (SkyScope: src/signing.py; Train Tracker: in the package)."""
+    for p in (ROOT / "src" / "signing.py", ROOT / "signing.py", ROOT / "src" / "train_tracker" / "signing.py"):
         if p.exists():
             spec = importlib.util.spec_from_file_location("signing", p)
             mod = importlib.util.module_from_spec(spec)

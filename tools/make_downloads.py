@@ -27,7 +27,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DIST = ROOT / "dist"
 GUIDE = ROOT / "docs" / "SkyScope-Guide.pdf"
-VERSION = re.search(r'VERSION = "([^"]+)"', (ROOT / "version.py").read_text()).group(1)
+VERSION = re.search(r'VERSION = "([^"]+)"', (ROOT / "src" / "version.py").read_text()).group(1)
 
 READ_ME = {
     "Mac": """SkyScope {v} for Mac
@@ -134,7 +134,7 @@ MARK = b"MOONPI-PAYLOAD-1"      # (installer/windows/src/Payload.cs reads it)
 def program_files(windows: bool) -> list[Path]:
     files = tracked()
     program = [f for f in files if (f.parent == ROOT and f.suffix == ".py")
-               or f.relative_to(ROOT).parts[0] in ("web", "data", "docs")
+               or f.relative_to(ROOT).parts[0] in ("src", "data", "docs")
                or f.name in ("README.md", "LICENSE")
                or f.relative_to(ROOT).as_posix() == "installer/keep_key.py"]   # (both installers)
     if ROOT / "installer/filecheck.py" not in program:

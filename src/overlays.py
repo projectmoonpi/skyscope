@@ -9,7 +9,7 @@ import re
 import threading
 from pathlib import Path
 
-DATA = Path(__file__).resolve().parent / "data"
+DATA = Path(__file__).resolve().parent.parent / "data"          # the app folder's data/ (src/ is the program)
 
 
 class Overlays:

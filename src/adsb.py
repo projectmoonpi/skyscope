@@ -187,13 +187,17 @@ class AdsbFeed:
                 parsed = self._fetch_sdr() if sdr else self._fetch_internet()
             except Exception as exc:  # network down, timeout, bad JSON, no receiver
                 with self._lock:
-                    self._last_error = str(exc) or exc.__class__.__name__
-                print(f"adsb: {self._last_error}")
+                    was, self._last_error = self._last_error, str(exc) or exc.__class__.__name__
+                if self._last_error != was:          # once per new error, not every few seconds while it lasts
+                    print(f"adsb: {self._last_error}")
             else:
                 with self._lock:
+                    was = self._last_error
                     self._aircraft = parsed[:MAX_AIRCRAFT]
                     self._base_time = time.monotonic()
                     self._last_error = ""
+                if was:
+                    print("adsb: aircraft data back")
             self._wake.wait(SDR_INTERVAL_S if sdr else self._interval_s)
 
     def _fetch_internet(self) -> list[Aircraft]:
